@@ -216,7 +216,7 @@ __marimo__/
 .streamlit/secrets.toml
 
 # Github Private key
-hack-review.2025-11-13.private-key.pem
+hack-review.pem
 
 #Gemini
 GEMINI.md

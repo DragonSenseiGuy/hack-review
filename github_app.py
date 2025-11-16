@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 APP_ID = os.getenv("APP_ID")
-PRIVATE_KEY = open("hack-review.2025-11-13.private-key.pem").read()
+PRIVATE_KEY = open("hack-review.pem").read()
 
 def generate_jwt():
     payload = {
