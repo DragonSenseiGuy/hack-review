@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 API_KEY = os.getenv("API_KEY")
+MODEL = os.getenv("MODEL")
 
 client = OpenAI(
     api_key=API_KEY,
@@ -24,7 +25,7 @@ def review_pr(review_prompt, pr_body, pr_title):
     print(user_prompt)
 
     response = client.chat.completions.create(
-        model="moonshotai/kimi-k2-0905",
+        model=MODEL,
         messages=[
             {"role": "developer", "content": f"{system_prompt}"},
             {"role": "user", "content": user_prompt}

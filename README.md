@@ -27,6 +27,7 @@ Hack Review is a GitHub App that automatically reviews your pull requests. It us
         WEBHOOK_SECRET=<your-webhook-secret>
         APP_ID=<your-app-id>
         API_KEY=<your-api-key>
+        MODEL=<your-ai-model>
         ```
     *   Download the private key for your GitHub App and save it as `hack-review.pem` in the root of the project.
 
