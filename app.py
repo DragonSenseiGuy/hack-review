@@ -4,6 +4,7 @@ from review import review_pr
 import requests
 import os
 from dotenv import load_dotenv
+import re
 
 load_dotenv()
 app = Flask(__name__)
@@ -24,13 +25,14 @@ def webhook():
         pr_number = body["number"]
         pr_body = body["pull_request"]["body"]
         pr_title = body["pull_request"]["title"]
+        commit_id = body["pull_request"]["head"]["sha"]
 
-        send_review(owner, repo, pr_number, pr_body, pr_title, token)
+        send_review(owner, repo, pr_number, pr_body, pr_title, token, commit_id)
 
     return "Request received, sending review"
 
 
-def send_review(owner, repo, pr_number, pr_body, pr_title, token):
+def send_review(owner, repo, pr_number, pr_body, pr_title, token, commit_id):
     headers = {"Authorization": f"token {token}"}
 
     # Fetch files from the pull request
@@ -40,11 +42,37 @@ def send_review(owner, repo, pr_number, pr_body, pr_title, token):
     # Generate summary of changes
     summary = summarize_changes(files, pr_body, pr_title)
 
-    # Post comment
-    comment_url = (
-        f"https://api.github.com/repos/{owner}/{repo}/issues/{pr_number}/comments"
-    )
-    requests.post(comment_url, headers=headers, json={"body": summary})
+    # Post review comments
+    post_review_comments(owner, repo, pr_number, commit_id, summary, headers)
+
+
+def post_review_comments(owner, repo, pr_number, commit_id, summary, headers):
+    comments = parse_review_comments(summary)
+    for comment in comments:
+        comment_url = f"https://api.github.com/repos/{owner}/{repo}/pulls/{pr_number}/comments"
+        payload = {
+            "body": comment["comment"],
+            "commit_id": commit_id,
+            "path": comment["file"],
+            "line": comment["line"],
+        }
+        requests.post(comment_url, headers=headers, json=payload)
+
+
+def parse_review_comments(summary):
+    """
+    Parses the review summary to extract individual comments.
+    """
+    # The regex looks for a pattern like: `* **app.py:42** - The comment text.`
+    comment_pattern = re.compile(r"\*\s*\*\*(.+?):(\d+)\*\* - (.+)")
+    comments = []
+    for line in summary.splitlines():
+        match = comment_pattern.match(line)
+        if match:
+            comments.append(
+                {"file": match.group(1), "line": int(match.group(2)), "comment": match.group(3)}
+            )
+    return comments
 
 
 def summarize_changes(files, pr_body, pr_title):
@@ -66,4 +94,3 @@ def summarize_changes(files, pr_body, pr_title):
 
 if __name__ == "__main__":
     app.run(port=3000, debug=True)
-
