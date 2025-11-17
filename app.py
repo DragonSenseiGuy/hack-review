@@ -1,6 +1,6 @@
 from flask import Flask, request
 from github_app import get_installation_token
-from review import review_pr
+from review import review_pr, review_comment
 import requests
 import os
 from dotenv import load_dotenv
@@ -10,6 +10,8 @@ load_dotenv()
 app = Flask(__name__)
 
 WEBHOOK_SECRET = os.getenv("WEBHOOK_SECRET")
+BOT_NAME = os.getenv("BOT_NAME")
+
 
 @app.post("/webhook")
 def webhook():
@@ -29,7 +31,49 @@ def webhook():
 
         send_review(owner, repo, pr_number, pr_body, pr_title, token, commit_id)
 
-    return "Request received, sending review"
+    elif event == "issue_comment" and body["action"] == "created":
+        if f"@{BOT_NAME.lower()}" in body["comment"]["body"].lower():
+            installation_id = body["installation"]["id"]
+            token = get_installation_token(installation_id)
+            owner = body["repository"]["owner"]["login"]
+            repo = body["repository"]["name"]
+            pr_number = body["issue"]["number"]
+            comment_body = body["comment"]["body"]
+            handle_issue_comment(owner, repo, pr_number, comment_body, token)
+
+    elif event == "pull_request_review_comment" and body["action"] == "created":
+        if f"@{BOT_NAME.lower()}" in body["comment"]["body"].lower():
+            installation_id = body["installation"]["id"]
+            token = get_installation_token(installation_id)
+            owner = body["repository"]["owner"]["login"]
+            repo = body["repository"]["name"]
+            pr_number = body["pull_request"]["number"]
+            comment_body = body["comment"]["body"]
+            comment_id = body["comment"]["id"]
+            diff_hunk = body["comment"]["diff_hunk"]
+            handle_review_comment(
+                owner, repo, pr_number, comment_body, comment_id, token, diff_hunk
+            )
+
+    return "Request received"
+
+
+def handle_issue_comment(owner, repo, pr_number, comment_body, token):
+    headers = {"Authorization": f"token {token}"}
+    response = review_comment(comment_body)
+    comment_url = (
+        f"https://api.github.com/repos/{owner}/{repo}/issues/{pr_number}/comments"
+    )
+    requests.post(comment_url, headers=headers, json={"body": response})
+
+
+def handle_review_comment(
+    owner, repo, pr_number, comment_body, comment_id, token, diff_hunk
+):
+    headers = {"Authorization": f"token {token}"}
+    response = review_comment(comment_body, diff_hunk)
+    comment_url = f"https://api.github.com/repos/{owner}/{repo}/pulls/{pr_number}/comments/{comment_id}/replies"
+    requests.post(comment_url, headers=headers, json={"body": response})
 
 
 def send_review(owner, repo, pr_number, pr_body, pr_title, token, commit_id):
@@ -49,7 +93,9 @@ def send_review(owner, repo, pr_number, pr_body, pr_title, token, commit_id):
 def post_review_comments(owner, repo, pr_number, commit_id, summary, headers):
     comments = parse_review_comments(summary)
     for comment in comments:
-        comment_url = f"https://api.github.com/repos/{owner}/{repo}/pulls/{pr_number}/comments"
+        comment_url = (
+            f"https://api.github.com/repos/{owner}/{repo}/pulls/{pr_number}/comments"
+        )
         payload = {
             "body": comment["comment"],
             "commit_id": commit_id,
@@ -70,7 +116,11 @@ def parse_review_comments(summary):
         match = comment_pattern.match(line)
         if match:
             comments.append(
-                {"file": match.group(1), "line": int(match.group(2)), "comment": match.group(3)}
+                {
+                    "file": match.group(1),
+                    "line": int(match.group(2)),
+                    "comment": match.group(3),
+                }
             )
     return comments
 
