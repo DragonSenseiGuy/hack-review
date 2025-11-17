@@ -28,6 +28,7 @@ Hack Review is a GitHub App that automatically reviews your pull requests. It us
         APP_ID=<your-app-id>
         API_KEY=<your-api-key>
         MODEL=<your-ai-model>
+        BOT_NAME=<name-of-the-app> # For detecting mentions of the bot
         ```
     *   Download the private key for your GitHub App and save it as `hack-review.pem` in the root of the project.
 
