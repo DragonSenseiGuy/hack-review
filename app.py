@@ -1,6 +1,7 @@
 from flask import Flask, request
 from github_app import get_installation_token
-from review import review_pr, review_comment
+from review import review_pr
+from preferences import extract_and_save_preference
 import requests
 import os
 from dotenv import load_dotenv
@@ -60,7 +61,7 @@ def webhook():
 
 def handle_issue_comment(owner, repo, pr_number, comment_body, token):
     headers = {"Authorization": f"token {token}"}
-    response = review_comment(comment_body)
+    response = extract_and_save_preference(comment_body)
     comment_url = (
         f"https://api.github.com/repos/{owner}/{repo}/issues/{pr_number}/comments"
     )
@@ -71,7 +72,7 @@ def handle_review_comment(
     owner, repo, pr_number, comment_body, comment_id, token, diff_hunk
 ):
     headers = {"Authorization": f"token {token}"}
-    response = review_comment(comment_body, diff_hunk)
+    response = extract_and_save_preference(comment_body)
     comment_url = f"https://api.github.com/repos/{owner}/{repo}/pulls/{pr_number}/comments/{comment_id}/replies"
     requests.post(comment_url, headers=headers, json={"body": response})
 
@@ -83,8 +84,14 @@ def send_review(owner, repo, pr_number, pr_body, pr_title, token, commit_id):
     files_url = f"https://api.github.com/repos/{owner}/{repo}/pulls/{pr_number}/files"
     files = requests.get(files_url, headers=headers).json()
 
+    try:
+        with open("preferences.md", "r") as f:
+            preferences = f.read()
+    except FileNotFoundError:
+        preferences = ""
+
     # Generate summary of changes
-    summary = summarize_changes(files, pr_body, pr_title)
+    summary = summarize_changes(files, pr_body, pr_title, preferences)
 
     # Post review comments
     post_review_comments(owner, repo, pr_number, commit_id, summary, headers)
@@ -125,7 +132,7 @@ def parse_review_comments(summary):
     return comments
 
 
-def summarize_changes(files, pr_body, pr_title):
+def summarize_changes(files, pr_body, pr_title, preferences):
     """
     Generates a summary of the changes in a pull request.
     """
@@ -138,7 +145,7 @@ def summarize_changes(files, pr_body, pr_title):
     review_prompt = ""
     for file in files:
         review_prompt += f"\nFile Name: \n{file['filename']} \nStatus: {file['status']}\nAdditions: {file['additions']}\nDeletions: {file['deletions']}\nChanges: {file['changes']}\nDiff: {file['patch']}"
-    summary = review_pr(review_prompt, pr_body, pr_title)
+    summary = review_pr(review_prompt, pr_body, pr_title, preferences)
     return summary
 
 
