@@ -1,6 +1,6 @@
 from flask import Flask, request
 from github_app import get_installation_token
-from review import review_pr
+from review import review_pr, review_comment
 from preferences import extract_and_save_preference
 import requests
 import os
@@ -61,7 +61,12 @@ def webhook():
 
 def handle_issue_comment(owner, repo, pr_number, comment_body, token):
     headers = {"Authorization": f"token {token}"}
-    response = extract_and_save_preference(comment_body)
+    
+    preference_response = extract_and_save_preference(comment_body)
+    review_response = review_comment(comment_body)
+    
+    response = f"{preference_response}\n\n---\n\n{review_response}"
+    
     comment_url = (
         f"https://api.github.com/repos/{owner}/{repo}/issues/{pr_number}/comments"
     )
@@ -72,7 +77,12 @@ def handle_review_comment(
     owner, repo, pr_number, comment_body, comment_id, token, diff_hunk
 ):
     headers = {"Authorization": f"token {token}"}
-    response = extract_and_save_preference(comment_body)
+    
+    preference_response = extract_and_save_preference(comment_body)
+    review_response = review_comment(comment_body, diff_hunk)
+    
+    response = f"{preference_response}\n\n---\n\n{review_response}"
+    
     comment_url = f"https://api.github.com/repos/{owner}/{repo}/pulls/{pr_number}/comments/{comment_id}/replies"
     requests.post(comment_url, headers=headers, json={"body": response})
 
@@ -140,7 +150,6 @@ def summarize_changes(files, pr_body, pr_title, preferences):
     for file in files:
         for key in keys_to_remove:
             file.pop(key, None)
-    print(files)
 
     review_prompt = ""
     for file in files:
