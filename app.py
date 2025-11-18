@@ -1,14 +1,18 @@
-from flask import Flask, request
-from github_app import get_installation_token
-from review import review_pr, review_comment
-from preferences import extract_and_save_preference
-import requests
+import logging
 import os
-from dotenv import load_dotenv
 import re
+from dotenv import load_dotenv
+from flask import Flask, request
+import requests
+
+from github_app import get_installation_token
+from preferences import extract_and_save_preference
+from review import review_pr, review_comment
 
 load_dotenv()
 app = Flask(__name__)
+
+logging.basicConfig(level=logging.INFO)
 
 WEBHOOK_SECRET = os.getenv("WEBHOOK_SECRET")
 BOT_NAME = os.getenv("BOT_NAME")
@@ -19,27 +23,23 @@ def webhook():
     event = request.headers.get("X-GitHub-Event")
     body = request.json
 
-    if event == "pull_request" and body["action"] == "opened":
+    # Ignore comments made by the bot itself to prevent loops
+    sender = body.get("sender", {}).get("login")
+    if sender and sender.lower() == BOT_NAME.lower():
+        logging.info(f"Ignoring event triggered by the bot itself ({sender}).")
+        return "Ignoring own event"
+
+    if event == "issue_comment" and body["action"] == "created":
+        comment_body = body["comment"]["body"].strip()
+        pr_number = body["issue"]["number"]
+        owner = body["repository"]["owner"]["login"]
+        repo = body["repository"]["name"]
         installation_id = body["installation"]["id"]
         token = get_installation_token(installation_id)
 
-        owner = body["repository"]["owner"]["login"]
-        repo = body["repository"]["name"]
-        pr_number = body["number"]
-        pr_body = body["pull_request"]["body"]
-        pr_title = body["pull_request"]["title"]
-        commit_id = body["pull_request"]["head"]["sha"]
-
-        send_review(owner, repo, pr_number, pr_body, pr_title, token, commit_id)
-
-    elif event == "issue_comment" and body["action"] == "created":
-        if f"@{BOT_NAME.lower()}" in body["comment"]["body"].lower():
-            installation_id = body["installation"]["id"]
-            token = get_installation_token(installation_id)
-            owner = body["repository"]["owner"]["login"]
-            repo = body["repository"]["name"]
-            pr_number = body["issue"]["number"]
-            comment_body = body["comment"]["body"]
+        if comment_body == "/review":
+            handle_review_command(owner, repo, pr_number, token)
+        elif f"@{BOT_NAME.lower()}" in comment_body.lower():
             handle_issue_comment(owner, repo, pr_number, comment_body, token)
 
     elif event == "pull_request_review_comment" and body["action"] == "created":
@@ -59,32 +59,93 @@ def webhook():
     return "Request received"
 
 
-def handle_issue_comment(owner, repo, pr_number, comment_body, token):
+def handle_review_command(owner, repo, pr_number, token):
+    """
+    Handles a command to trigger a full PR review.
+    """
     headers = {"Authorization": f"token {token}"}
+    
+    logging.info(f"Handling /review command for {owner}/{repo} PR #{pr_number}")
+
+    try:
+        # Get PR data to find the head SHA, title, and body
+        pr_url = f"https://api.github.com/repos/{owner}/{repo}/pulls/{pr_number}"
+        pr_response = requests.get(pr_url, headers=headers)
+        pr_response.raise_for_status()  # Check for errors
+        pr_data = pr_response.json()
+
+        pr_body = pr_data.get("body", "")
+        pr_title = pr_data.get("title", "")
+        commit_id = pr_data.get("head", {}).get("sha")
+
+        if not commit_id:
+            logging.error(f"Could not find head SHA for PR #{pr_number}")
+            return
+
+        # This is the existing function that does the review
+        send_review(owner, repo, pr_number, pr_body, pr_title, token, commit_id)
+        logging.info(f"Successfully triggered review for PR #{pr_number}")
+
+    except requests.exceptions.RequestException as e:
+        logging.error(f"Failed to fetch PR data for review. Error: {e}")
+        logging.error(f"Response body: {e.response.text if e.response else 'No response'}")
+
+
+def handle_issue_comment(owner, repo, pr_number, comment_body, token):
+    if f"@{BOT_NAME.lower()}" not in comment_body.lower():
+        logging.warning("handle_issue_comment called without a bot mention. Skipping.")
+        return
+
+    headers = {"Authorization": f"token {token}"}
+    
+    logging.info(f"Handling issue comment for {owner}/{repo} PR #{pr_number}")
     
     preference_response = extract_and_save_preference(comment_body)
     review_response = review_comment(comment_body)
     
-    response = f"{preference_response}\n\n---\n\n{review_response}"
+    if preference_response:
+        response_body = f"{preference_response}\n\n---\n\n{review_response}"
+    else:
+        response_body = review_response
     
     comment_url = (
         f"https://api.github.com/repos/{owner}/{repo}/issues/{pr_number}/comments"
     )
-    requests.post(comment_url, headers=headers, json={"body": response})
+    
+    try:
+        api_response = requests.post(comment_url, headers=headers, json={"body": response_body})
+        api_response.raise_for_status()  # Raise an exception for bad status codes
+        logging.info(f"Successfully posted comment to PR #{pr_number}. Status: {api_response.status_code}")
+    except requests.exceptions.RequestException as e:
+        logging.error(f"Failed to post comment to PR #{pr_number}. Error: {e}")
+        logging.error(f"Response body: {e.response.text if e.response else 'No response'}")
 
 
 def handle_review_comment(
     owner, repo, pr_number, comment_body, comment_id, token, diff_hunk
 ):
+    if f"@{BOT_NAME.lower()}" not in comment_body.lower():
+        logging.warning("handle_review_comment called without a bot mention. Skipping.")
+        return
+
     headers = {"Authorization": f"token {token}"}
+    
+    logging.info(f"Handling review comment for {owner}/{repo} PR #{pr_number}")
     
     preference_response = extract_and_save_preference(comment_body)
     review_response = review_comment(comment_body, diff_hunk)
     
-    response = f"{preference_response}\n\n---\n\n{review_response}"
+    response_body = f"{preference_response}\n\n---\n\n{review_response}"
     
     comment_url = f"https://api.github.com/repos/{owner}/{repo}/pulls/{pr_number}/comments/{comment_id}/replies"
-    requests.post(comment_url, headers=headers, json={"body": response})
+    
+    try:
+        api_response = requests.post(comment_url, headers=headers, json={"body": response_body})
+        api_response.raise_for_status()
+        logging.info(f"Successfully posted reply to comment {comment_id} in PR #{pr_number}. Status: {api_response.status_code}")
+    except requests.exceptions.RequestException as e:
+        logging.error(f"Failed to post reply to comment {comment_id} in PR #{pr_number}. Error: {e}")
+        logging.error(f"Response body: {e.response.text if e.response else 'No response'}")
 
 
 def send_review(owner, repo, pr_number, pr_body, pr_title, token, commit_id):

@@ -38,11 +38,15 @@ def review_comment(comment_body, diff_hunk=None):
 
 
 def generate_review(user_prompt, system_prompt):
-    response = client.chat.completions.create(
-        model=MODEL,
-        messages=[
-            {"role": "system", "content": f"{system_prompt}"},
-            {"role": "user", "content": user_prompt},
-        ],
-    )
-    return response.choices[0].message.content
+    try:
+        response = client.chat.completions.create(
+            model=MODEL,
+            messages=[
+                {"role": "system", "content": f"{system_prompt}"},
+                {"role": "user", "content": user_prompt},
+            ],
+        )
+        return response.choices[0].message.content
+    except Exception as e:
+        print(f"Error generating review: {e}")
+        return "Sorry, I encountered an error while generating a response."
