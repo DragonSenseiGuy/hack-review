@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hack Review - AI-powered Pull Request Reviews</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f7f6;
+            color: #333;
+        }
+        .container {
+            max-width: 900px;
+            margin: 20px auto;
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+        header {
+            text-align: center;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #eee;
+            margin-bottom: 30px;
+        }
+        header h1 {
+            color: #2c3e50;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        header p {
+            color: #7f8c8d;
+            font-size: 1.1em;
+        }
+        section {
+            margin-bottom: 30px;
+        }
+        h2 {
+            color: #34495e;
+            font-size: 1.8em;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 5px;
+        }
+        h3 {
+            color: #34495e;
+            font-size: 1.3em;
+            margin-bottom: 10px;
+        }
+        code, pre {
+            background-color: #ecf0f1;
+            padding: 2px 5px;
+            border-radius: 4px;
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
+            font-size: 0.9em;
+            color: #2c3e50;
+        }
+        pre {
+            display: block;
+            padding: 15px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        ul {
+            list-style-type: disc;
+            margin-left: 20px;
+            padding-left: 0;
+        }
+        ol {
+            list-style-type: decimal;
+            margin-left: 20px;
+            padding-left: 0;
+        }
+        li {
+            margin-bottom: 8px;
+        }
+        a {
+            color: #3498db;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+        footer {
+            text-align: center;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+            margin-top: 40px;
+            color: #7f8c8d;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Hack Review</h1>
+            <p>AI-powered Pull Request Reviews for your GitHub repositories</p>
+        </header>
+
+        <section id="about">
+            <h2>About Hack Review</h2>
+            <p>Hack Review is a GitHub App designed to streamline your code review process. It automatically analyzes your pull requests using artificial intelligence to provide instant feedback on potential bugs, style inconsistencies, and other common issues, helping your team maintain high code quality and accelerate development cycles.</p>
+        </section>
+
+        <section id="how-it-works">
+            <h2>How it works</h2>
+            <ol>
+                <li>When a pull request is opened on your repository, Hack Review receives a webhook notification from GitHub.</li>
+                <li>The app then fetches the relevant files and changes from the pull request.</li>
+                <li>It constructs a detailed prompt, including the PR title, body, and the diffs of all changed files.</li>
+                <li>This prompt is sent to <a href="https://ai.hackclub.com/" target="_blank">Hack Club's AI API</a> for intelligent review.</li>
+                <li>Finally, Hack Review posts the AI-generated review as a concise comment/review directly on your pull request on GitHub.</li>
+            </ol>
+        </section>
+
+        <section id="setup">
+            <h2>Setup Guide(Full App Coming Soon!)</h2>
+            <p>Follow these steps to integrate Hack Review with your GitHub workflow:</p>
+
+            <h3>1. Create a GitHub App</h3>
+            <ul>
+                <li>Navigate to your GitHub settings and initiate the creation of a new GitHub App.</li>
+                <li>Assign a distinctive name, such as "Hack Review".</li>
+                <li>Configure the webhook URL to point to your server's public address (e.g., <code>https://your-domain.com/webhook</code>).</li>
+                <li>Generate and securely store a webhook secret.</li>
+                <li>Grant the app "Pull requests", "Issue comment" and "Commit comment" read and write permissions.</li>
+                <li>Install the app on the specific repositories where you desire automated reviews.</li>
+            </ul>
+
+            <h3>2. Set up the environment</h3>
+            <ul>
+                <li>Clone this repository to your local development environment.</li>
+                <li>Create a <code>.env</code> file in the root directory and populate it with the following essential variables:
+<pre><code>WEBHOOK_SECRET=&lt;your-webhook-secret&gt;
+APP_ID=&lt;your-app-id&gt;
+API_KEY=&lt;your-api-key&gt;
+MODEL=&lt;your-ai-model&gt;
+BOT_NAME=&lt;name-of-the-app&gt; # For detecting mentions of the bot
+</code></pre>
+                </li>
+                <li>Download the private key associated with your GitHub App and save it as <code>hack-review.pem</code> in the project's root directory.</li>
+            </ul>
+
+            <h3>3. Install the dependencies</h3>
+            <pre><code>uv sync</code></pre>
+
+            <h3>4. Run the app</h3>
+            <pre><code>python app.py</code></pre>
+        </section>
+
+        <section id="system-prompt">
+            <h2>System Prompt Customization</h2>
+            <p>The core behavior of the AI reviewer is governed by a configurable system prompt. You can locate and modify this prompt within the <code>System_Prompt.md</code> file to fine-tune the AI's review style and focus.</p>
+        </section>
+
+        <section id="contribute">
+            <h2>How to contribute</h2>
+            <p>We welcome contributions to Hack Review! If you'd like to help improve the project:</p>
+            <ol>
+                <li>Fork the repository on GitHub.</li>
+                <li>Create a new branch for your features or bug fixes.</li>
+                <li>Implement your changes.</li>
+                <li>Open a pull request detailing your contributions.</li>
+            </ol>
+        </section>
+
+        <footer>
+            <p>&copy; 2025 Hack Review. All rights reserved.</p>
+        </footer>
+    </div>
+</body>
+</html>
