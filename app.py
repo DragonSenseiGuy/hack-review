@@ -135,7 +135,10 @@ def handle_review_comment(
     preference_response = extract_and_save_preference(comment_body)
     review_response = review_comment(comment_body, diff_hunk)
     
-    response_body = f"{preference_response}\n\n---\n\n{review_response}"
+    if preference_response:
+        response_body = f"{preference_response}\n\n---\n\n{review_response}"
+    else:
+        response_body = review_response
     
     comment_url = f"https://api.github.com/repos/{owner}/{repo}/pulls/{pr_number}/comments/{comment_id}/replies"
     
