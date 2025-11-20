@@ -12,10 +12,10 @@ client = OpenAI(api_key=API_KEY, base_url="https://ai.hackclub.com/proxy/v1")
 
 def review_pr(review_prompt, pr_body, pr_title, preferences=""):
     try:
-        with open("System_Prompt.md", "r") as system_prompt_file:
+        with open("../../data/System_Prompt.md", "r") as system_prompt_file:
             system_prompt = system_prompt_file.read()
     except FileNotFoundError:
-        print("Error: The file 'System_Prompt.md' was not found.")
+        print("Error: The file 'data/System_Prompt.md' was not found.")
         system_prompt = "You are an expert code reviewer AI."
     except Exception as e:
         print(f"An error occurred: {e}")

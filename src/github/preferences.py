@@ -12,7 +12,7 @@ client = OpenAI(api_key=API_KEY, base_url="https://ai.hackclub.com/proxy/v1")
 def extract_and_save_preference(comment_body):
     """
     Analyzes a comment to see if it contains a project preference, and if so,
-    saves it to the preferences.md file.
+    saves it to the data/preferences.md file.
     """
     try:
         system_prompt = """You are an AI assistant tasked with identifying project-specific preferences from user comments.
@@ -34,7 +34,7 @@ Do not add any other text to your response."""
         preference = response.choices[0].message.content.strip()
 
         if "NO_PREFERENCE" not in preference:
-            with open("preferences.md", "a") as f:
+            with open("../../data/preferences.md", "a") as f:
                 f.write(f"- {preference}\n")
             return f"Preference noted: {preference}"
         else:

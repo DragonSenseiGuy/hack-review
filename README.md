@@ -44,7 +44,7 @@ Hack Review is a GitHub App that automatically reviews your pull requests. It us
 
 ## System Prompt
 
-The AI's behavior is guided by a system prompt. You can find the system prompt in the `System_Prompt.md` file. You can modify this file to change the AI's behavior.
+The AI's behavior is guided by a system prompt. You can find the system prompt in the `data/System_Prompt.md` file. You can modify this file to change the AI's behavior.
 
 ## How to contribute
 

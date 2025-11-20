@@ -159,7 +159,7 @@ def send_review(owner, repo, pr_number, pr_body, pr_title, token, commit_id):
     files = requests.get(files_url, headers=headers).json()
 
     try:
-        with open("preferences.md", "r") as f:
+        with open("../../data/preferences.md", "r") as f:
             preferences = f.read()
     except FileNotFoundError:
         preferences = ""
