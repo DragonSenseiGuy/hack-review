@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard - HC AI Stats{% endblock %}
+
+{% block content %}
+<h1 class="text-3xl font-bold text-mocha-red mb-6">API Usage Statistics</h1>
+<div id="stats-container" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <div class="bg-mocha-surface p-6 rounded-lg shadow-lg">
+        <h2 class="text-lg font-semibold text-mocha-subtext mb-2">Total Requests</h2>
+        <p id="total-requests" class="text-4xl font-bold text-mocha-text">Loading...</p>
+    </div>
+    <div class="bg-mocha-surface p-6 rounded-lg shadow-lg">
+        <h2 class="text-lg font-semibold text-mocha-subtext mb-2">Total Tokens</h2>
+        <p id="total-tokens" class="text-4xl font-bold text-mocha-text">Loading...</p>
+    </div>
+    <div class="bg-mocha-surface p-6 rounded-lg shadow-lg">
+        <h2 class="text-lg font-semibold text-mocha-subtext mb-2">Successful Requests</h2>
+        <p id="successful-requests" class="text-4xl font-bold text-mocha-text">Loading...</p>
+    </div>
+</div>
+<div id="error-message" class="mt-6 bg-red-500/20 text-mocha-red p-4 rounded-lg shadow-lg hidden">
+    <p><strong>Error:</strong> <span id="error-text"></span></p>
+    <p>Please configure your API key in the <a href="{{ url_for('site.settings') }}" class="font-bold underline">Settings page</a>.</p>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        fetch('/site/api/stats')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+                document.getElementById('total-requests').textContent = data.requests?.toLocaleString() || 'N/A';
+                document.getElementById('total-tokens').textContent = data.tokens?.toLocaleString() || 'N/A';
+                document.getElementById('successful-requests').textContent = data.requests?.toLocaleString() || 'N/A'; // Assuming this mapping for now
+            })
+            .catch(error => {
+                console.error('Error fetching stats:', error);
+                document.getElementById('stats-container').classList.add('hidden');
+                const errorContainer = document.getElementById('error-message');
+                const errorText = document.getElementById('error-text');
+                errorText.textContent = error.message || 'Could not fetch API stats.';
+                errorContainer.classList.remove('hidden');
+            });
+    });
+</script>
+{% endblock %}

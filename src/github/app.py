@@ -1,21 +1,30 @@
 import logging
 import os
 import re
+import sys
 from dotenv import load_dotenv
 from flask import Flask, request
 import requests
 
+# Add project root to the Python path
+ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+sys.path.insert(0, ROOT_DIR)
+
 from github_app import get_installation_token
 from preferences import extract_and_save_preference
+from src.site.website import site_bp
 from review import review_pr, review_comment
 
 load_dotenv()
 app = Flask(__name__)
+app.register_blueprint(site_bp, url_prefix='/site')
 
 logging.basicConfig(level=logging.INFO)
 
 WEBHOOK_SECRET = os.getenv("WEBHOOK_SECRET")
 BOT_NAME = os.getenv("BOT_NAME")
+ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+PREFERENCES_PATH = os.path.join(ROOT_DIR, 'data', 'preferences.md')
 
 
 @app.post("/webhook")
@@ -159,7 +168,7 @@ def send_review(owner, repo, pr_number, pr_body, pr_title, token, commit_id):
     files = requests.get(files_url, headers=headers).json()
 
     try:
-        with open("../../data/preferences.md", "r") as f:
+        with open(PREFERENCES_PATH, "r") as f:
             preferences = f.read()
     except FileNotFoundError:
         preferences = ""

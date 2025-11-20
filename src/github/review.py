@@ -7,15 +7,18 @@ load_dotenv()
 API_KEY = os.getenv("API_KEY")
 MODEL = os.getenv("MODEL")
 
+ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+PROMPT_PATH = os.path.join(ROOT_DIR, 'data', 'System_Prompt.md')
+
 client = OpenAI(api_key=API_KEY, base_url="https://ai.hackclub.com/proxy/v1")
 
 
 def review_pr(review_prompt, pr_body, pr_title, preferences=""):
     try:
-        with open("../../data/System_Prompt.md", "r") as system_prompt_file:
+        with open(PROMPT_PATH, "r") as system_prompt_file:
             system_prompt = system_prompt_file.read()
     except FileNotFoundError:
-        print("Error: The file 'data/System_Prompt.md' was not found.")
+        print(f"Error: The file '{PROMPT_PATH}' was not found.")
         system_prompt = "You are an expert code reviewer AI."
     except Exception as e:
         print(f"An error occurred: {e}")

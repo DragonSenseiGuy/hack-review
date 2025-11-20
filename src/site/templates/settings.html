@@ -1,0 +1,105 @@
+{% extends 'base.html' %}
+{% block title %}Settings - HC AI Stats{% endblock %}
+
+{% block content %}
+<h1 class="text-3xl font-bold text-mocha-red mb-6">Settings</h1>
+
+<div id="notification" class="mb-4 p-4 rounded-lg hidden"></div>
+
+<form id="settings-form" class="bg-mocha-surface p-8 rounded-lg shadow-lg max-w-lg mx-auto">
+    <div class="mb-6">
+        <label for="api-key" class="block text-mocha-subtext text-sm font-bold mb-2">Hack Club AI API Key</label>
+        <input type="password" id="api-key" name="api_key" class="shadow appearance-none border rounded w-full py-2 px-3 bg-mocha-overlay border-mocha-surface text-mocha-text leading-tight focus:outline-none focus:shadow-outline" placeholder="Enter your API key">
+    </div>
+    <div class="mb-6">
+        <label for="model" class="block text-mocha-subtext text-sm font-bold mb-2">AI Model</label>
+        <select id="model" name="model" class="shadow appearance-none border rounded w-full py-2 px-3 bg-mocha-overlay border-mocha-surface text-mocha-text leading-tight focus:outline-none focus:shadow-outline">
+            <option>Loading models...</option>
+        </select>
+    </div>
+    <div class="flex items-center justify-end">
+        <button type="submit" class="bg-mocha-red hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+            Save Settings
+        </button>
+    </div>
+</form>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const modelSelect = document.getElementById('model');
+        const apiKeyInput = document.getElementById('api-key');
+        const form = document.getElementById('settings-form');
+        const notification = document.getElementById('notification');
+
+        // Fetch available models
+        fetch('/site/api/models')
+            .then(response => response.json())
+            .then(data => {
+                modelSelect.innerHTML = ''; // Clear loading message
+                if (data.models) {
+                    data.models.forEach(model => {
+                        const option = document.createElement('option');
+                        option.value = model.id;
+                        option.textContent = model.id;
+                        modelSelect.appendChild(option);
+                    });
+                }
+                // After populating models, get current config to set selected values
+                return fetch('/site/api/config');
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.API_KEY) {
+                    apiKeyInput.value = data.API_KEY;
+                }
+                if (data.MODEL) {
+                    modelSelect.value = data.MODEL;
+                }
+            })
+            .catch(error => {
+                console.error('Error initializing settings page:', error);
+                showNotification('Could not load initial configuration.', 'error');
+            });
+
+        // Handle form submission
+        form.addEventListener('submit', (event) => {
+            event.preventDefault();
+            const formData = new FormData(form);
+            const data = Object.fromEntries(formData.entries());
+
+            fetch('/site/api/config', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data),
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    showNotification('Settings saved successfully!', 'success');
+                } else {
+                    showNotification(`Error: ${result.error}`, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error saving settings:', error);
+                showNotification('An unexpected error occurred.', 'error');
+            });
+        });
+
+        function showNotification(message, type) {
+            notification.textContent = message;
+            if (type === 'success') {
+                notification.className = 'mb-4 p-4 rounded-lg bg-green-500/20 text-green-400';
+            } else {
+                notification.className = 'mb-4 p-4 rounded-lg bg-red-500/20 text-mocha-red';
+            }
+            notification.classList.remove('hidden');
+            setTimeout(() => {
+                notification.classList.add('hidden');
+            }, 3000);
+        }
+    });
+</script>
+{% endblock %}

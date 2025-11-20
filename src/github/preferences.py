@@ -7,6 +7,9 @@ load_dotenv()
 API_KEY = os.getenv("API_KEY")
 MODEL = os.getenv("MODEL")
 
+ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+PREFERENCES_PATH = os.path.join(ROOT_DIR, 'data', 'preferences.md')
+
 client = OpenAI(api_key=API_KEY, base_url="https://ai.hackclub.com/proxy/v1")
 
 def extract_and_save_preference(comment_body):
@@ -34,7 +37,7 @@ Do not add any other text to your response."""
         preference = response.choices[0].message.content.strip()
 
         if "NO_PREFERENCE" not in preference:
-            with open("../../data/preferences.md", "a") as f:
+            with open(PREFERENCES_PATH, "a") as f:
                 f.write(f"- {preference}\n")
             return f"Preference noted: {preference}"
         else:

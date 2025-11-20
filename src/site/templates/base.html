@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Hack Club AI Dashboard{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'mocha-bg': '#1e1e2e',
+                        'mocha-surface': '#313244',
+                        'mocha-overlay': '#45475a',
+                        'mocha-text': '#cdd6f4',
+                        'mocha-subtext': '#a6adc8',
+                        'mocha-red': '#f38ba8',
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="icon" href="{{ url_for('site.static', filename='favicon.ico') }}" type="image/x-icon">
+</head>
+<body class="bg-mocha-bg text-mocha-text font-sans">
+    <nav class="bg-mocha-surface shadow-md">
+        <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <a href="{{ url_for('site.index') }}" class="text-xl font-bold text-mocha-red">HC AI Dashboard</a>
+            <div>
+                <a href="{{ url_for('site.index') }}" class="px-4 text-mocha-subtext hover:text-mocha-text">Dashboard</a>
+                <a href="{{ url_for('site.settings') }}" class="px-4 text-mocha-subtext hover:text-mocha-text">Settings</a>
+            </div>
+        </div>
+    </nav>
+    <main class="container mx-auto px-6 py-8">
+        {% block content %}{% endblock %}
+    </main>
+</body>
+</html>
