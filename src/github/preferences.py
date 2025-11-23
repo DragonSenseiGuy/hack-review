@@ -7,13 +7,19 @@ load_dotenv()
 API_KEY = os.getenv("API_KEY")
 MODEL = os.getenv("MODEL")
 
-client = OpenAI(api_key=API_KEY, base_url="https://ai.hackclub.com/proxy/v1")
+if API_KEY:
+    client = OpenAI(api_key=API_KEY, base_url="https://ai.hackclub.com/proxy/v1")
+else:
+    client = None
 
 def extract_and_save_preference(comment_body):
     """
     Analyzes a comment to see if it contains a project preference, and if so,
     saves it to the data/preferences.md file.
     """
+    if not client:
+        return ""
+        
     try:
         system_prompt = """You are an AI assistant tasked with identifying project-specific preferences from user comments.
 Analyze the following comment. If it contains a clear preference, convention, or rule for the project's codebase, please summarize it in a single, concise sentence.
@@ -34,7 +40,10 @@ Do not add any other text to your response."""
         preference = response.choices[0].message.content.strip()
 
         if "NO_PREFERENCE" not in preference:
-            with open("../../data/preferences.md", "a") as f:
+            # Construct path relative to the project root
+            dir_path = os.path.dirname(os.path.realpath(__file__))
+            preferences_path = os.path.join(dir_path, "..", "..", "data", "preferences.md")
+            with open(preferences_path, "a") as f:
                 f.write(f"- {preference}\n")
             return f"Preference noted: {preference}"
         else:

@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+
+{% block title %}Home{% endblock %}
+
+{% block content %}
+    <h1>Usage Stats</h1>
+    {% if stats %}
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">API Usage</h5>
+                <p class="card-text">Total Requests: {{ stats.totalRequests }}</p>
+                <p class="card-text">Total Tokens: {{ stats.totalTokens }}</p>
+                <p class="card-text">Total Prompt Tokens: {{ stats.totalPromptTokens }}</p>
+                <p class="card-text">Total Completion Tokens: {{ stats.totalCompletionTokens }}</p>
+            </div>
+        </div>
+    {% else %}
+        <p>No stats to display. Please add your API key on the settings page.</p>
+    {% endif %}
+{% endblock %}
