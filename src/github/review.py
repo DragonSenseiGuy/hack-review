@@ -7,12 +7,19 @@ load_dotenv()
 API_KEY = os.getenv("API_KEY")
 MODEL = os.getenv("MODEL")
 
-client = OpenAI(api_key=API_KEY, base_url="https://ai.hackclub.com/proxy/v1")
+if API_KEY:
+    client = OpenAI(api_key=API_KEY, base_url="https://ai.hackclub.com/proxy/v1")
+else:
+    client = None
 
 
 def review_pr(review_prompt, pr_body, pr_title, preferences=""):
+    if not client:
+        return "The API_KEY is not configured."
     try:
-        with open("../../data/System_Prompt.md", "r") as system_prompt_file:
+        dir_path = os.path.dirname(os.path.realpath(__file__))
+        system_prompt_path = os.path.join(dir_path, "..", "..", "data", "System_Prompt.md")
+        with open(system_prompt_path, "r") as system_prompt_file:
             system_prompt = system_prompt_file.read()
     except FileNotFoundError:
         print("Error: The file 'data/System_Prompt.md' was not found.")
@@ -29,6 +36,8 @@ def review_pr(review_prompt, pr_body, pr_title, preferences=""):
 
 
 def review_comment(comment_body, diff_hunk=None):
+    if not client:
+        return "The API_KEY is not configured."
     system_prompt = "You are a helpful AI assistant. A user has mentioned you in a code review comment, please respond to them."
     if diff_hunk:
         user_prompt = f"The user commented:\n{comment_body}\n\nThe code they are commenting on is:\n{diff_hunk}"
@@ -38,6 +47,8 @@ def review_comment(comment_body, diff_hunk=None):
 
 
 def generate_review(user_prompt, system_prompt):
+    if not client:
+        return "The API_KEY is not configured."
     try:
         response = client.chat.completions.create(
             model=MODEL,

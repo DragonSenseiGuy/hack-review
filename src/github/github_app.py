@@ -7,7 +7,12 @@ from dotenv import load_dotenv
 load_dotenv()
 
 APP_ID = os.getenv("APP_ID")
-PRIVATE_KEY = open("../../hack-review.pem").read()
+# Construct the path to the private key file relative to this script
+dir_path = os.path.dirname(os.path.realpath(__file__))
+private_key_path = os.path.join(dir_path, "..", "..", "hack-review.pem")
+
+with open(private_key_path, "r") as f:
+    PRIVATE_KEY = f.read()
 
 def generate_jwt():
     payload = {

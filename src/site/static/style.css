@@ -1,0 +1,98 @@
+:root {
+    --bg-color: #FFF3EB;
+    --primary-color: #EC3750;
+    --heading-color: #4D000B;
+    --text-color: #A67E85;
+    --primary-hover-color: #D62640;
+    --surface-color: #FFFFFF;
+    --border-color: #F0D4D8;
+}
+
+body {
+    background-color: var(--bg-color) !important; /* Use !important to ensure override */
+    color: var(--text-color);
+}
+
+h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
+    color: var(--heading-color);
+}
+
+a {
+    color: var(--primary-color);
+}
+
+a:hover {
+    color: var(--primary-hover-color);
+}
+
+.btn {
+    border-radius: 20px;
+}
+
+.btn-primary {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+    color: #FFFFFF;
+}
+
+.btn-primary:hover {
+    background-color: var(--primary-hover-color);
+    border-color: var(--primary-hover-color);
+    color: #FFFFFF;
+}
+
+.card {
+    background-color: var(--surface-color);
+    border: 1px solid var(--border-color);
+    border-radius: 15px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+}
+
+.form-control {
+    border-radius: 10px;
+    border: 1px solid var(--border-color);
+    background-color: var(--surface-color);
+    color: var(--text-color);
+}
+
+.form-control:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.25rem rgba(236, 55, 80, 0.25); /* primary-color with alpha */
+}
+
+.navbar.bg-light {
+    background-color: var(--surface-color) !important;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.navbar-brand {
+    color: var(--heading-color) !important;
+    font-weight: bold;
+}
+
+.nav-link {
+    color: var(--text-color) !important;
+}
+
+.nav-link:hover {
+    color: var(--primary-color) !important;
+}
+
+.alert {
+    border-radius: 10px;
+}
+.alert-warning {
+    background-color: #fff8e1;
+    border-color: #ffecb3;
+    color: #6d4c41;
+}
+.alert-danger {
+    background-color: #fce4ec;
+    border-color: #f8bbd0;
+    color: #ad1457;
+}
+.alert-success {
+    background-color: #e8f5e9;
+    border-color: #c8e6c9;
+    color: #1b5e20;
+}
